@@ -42,7 +42,7 @@ import hudson.model.TaskListener;
 import hudson.tasks.test.AbstractTestResultAction;
 import hudson.tasks.test.TestResult;
 import jenkins.plugins.logstash.LogstashConfiguration;
-import jenkins.plugins.logstash.persistence.BuildData.TestData;
+import jenkins.plugins.logstash.persistence.BuildInfo.TestData;
 import net.sf.json.JSONObject;
 import net.sf.json.test.JSONAssert;
 
@@ -50,14 +50,14 @@ import net.sf.json.test.JSONAssert;
 @RunWith(PowerMockRunner.class)
 @PowerMockIgnore({"javax.crypto.*"})
 @PrepareForTest(LogstashConfiguration.class)
-public class BuildDataTest {
+public class BuildInfoTest {
 
-  static final String FULL_STRING = "{\"id\":\"TEST_JOB_123\",\"result\":\"SUCCESS\",\"fullProjectName\":\"parent/BuildDataTest\","
-      + "\"projectName\":\"BuildDataTest\",\"displayName\":\"BuildData Test\",\"fullDisplayName\":\"BuildData Test #123456\","
-      + "\"description\":\"Mock project for testing BuildData\",\"url\":\"http://localhost:8080/jenkins/jobs/PROJECT_NAME/123\","
+  static final String FULL_STRING = "{\"id\":\"TEST_JOB_123\",\"result\":\"SUCCESS\",\"fullProjectName\":\"parent/BuildInfoTest\","
+      + "\"projectName\":\"BuildInfoTest\",\"displayName\":\"BuildInfo Test\",\"fullDisplayName\":\"BuildInfo Test #123456\","
+      + "\"description\":\"Mock project for testing BuildInfo\",\"url\":\"http://localhost:8080/jenkins/jobs/PROJECT_NAME/123\","
       + "\"buildHost\":\"master\",\"buildLabel\":\"master\",\"buildNum\":123456,\"buildDuration\":60,"
       + "\"rootProjectName\":\"RootBuildDataTest\",\"rootFullProjectName\":\"parent/RootBuildDataTest\","
-      + "\"rootProjectDisplayName\":\"Root BuildData Test\",\"rootBuildNum\":456,\"buildVariables\":{},"
+      + "\"rootProjectDisplayName\":\"Root BuildInfo Test\",\"rootBuildNum\":456,\"buildVariables\":{},"
       + "\"sensitiveBuildVariables\":[],\"testResults\":{\"totalCount\":0,\"skipCount\":0,\"failCount\":0, \"passCount\":0,"
       + "\"failedTests\":[], \"failedTestsWithErrorDetail\":[]}}";
 
@@ -82,9 +82,9 @@ public class BuildDataTest {
     when(logstashConfiguration.getDateFormatter()).thenCallRealMethod();
 
     when(mockBuild.getResult()).thenReturn(Result.SUCCESS);
-    when(mockBuild.getDisplayName()).thenReturn("BuildData Test");
-    when(mockBuild.getFullDisplayName()).thenReturn("BuildData Test #123456");
-    when(mockBuild.getDescription()).thenReturn("Mock project for testing BuildData");
+    when(mockBuild.getDisplayName()).thenReturn("BuildInfo Test");
+    when(mockBuild.getFullDisplayName()).thenReturn("BuildInfo Test #123456");
+    when(mockBuild.getDescription()).thenReturn("Mock project for testing BuildInfo");
     when(mockBuild.getParent()).thenReturn(mockProject);
     when(mockBuild.getNumber()).thenReturn(123456);
     when(mockBuild.getTimestamp()).thenReturn(new GregorianCalendar());
@@ -101,12 +101,12 @@ public class BuildDataTest {
     when(mockTestResultAction.getFailCount()).thenReturn(0);
     when(mockTestResultAction.getFailedTests()).thenReturn(Collections.emptyList());
 
-    when(mockProject.getName()).thenReturn("BuildDataTest");
-    when(mockProject.getFullName()).thenReturn("parent/BuildDataTest");
+    when(mockProject.getName()).thenReturn("BuildInfoTest");
+    when(mockProject.getFullName()).thenReturn("parent/BuildInfoTest");
 
     when(mockRootBuild.getProject()).thenReturn(mockRootProject);
     when(mockRootBuild.getNumber()).thenReturn(456);
-    when(mockRootBuild.getDisplayName()).thenReturn("Root BuildData Test");
+    when(mockRootBuild.getDisplayName()).thenReturn("Root BuildInfo Test");
 
     when(mockRootProject.getName()).thenReturn("RootBuildDataTest");
     when(mockRootProject.getFullName()).thenReturn("parent/RootBuildDataTest");
@@ -180,14 +180,14 @@ public class BuildDataTest {
      when(mockComputer.getNode()).thenReturn(null);
 
     // Unit under test
-    BuildData buildData = new BuildData(mockBuild, mockDate, mockListener);
+    BuildInfo buildInfo = new BuildInfo(mockBuild, mockDate, mockListener);
 
     // build.getDuration() is always 0 in Notifiers
-    Assert.assertEquals("Incorrect buildDuration", 60L, buildData.getBuildDuration());
+    Assert.assertEquals("Incorrect buildDuration", 60L, buildInfo.getBuildDuration());
 
     // Verify the rest of the results
-    Assert.assertEquals("Incorrect buildHost", "master", buildData.getBuildHost());
-    Assert.assertEquals("Incorrect buildLabel", "master", buildData.getBuildLabel());
+    Assert.assertEquals("Incorrect buildHost", "master", buildInfo.getBuildHost());
+    Assert.assertEquals("Incorrect buildLabel", "master", buildInfo.getBuildLabel());
 
     verifyMocks();
     verifyTestResultActions();
@@ -201,14 +201,14 @@ public class BuildDataTest {
     when(mockNode.getLabelString()).thenReturn("");
 
     // Unit under test
-    BuildData buildData = new BuildData(mockBuild, mockDate, mockListener);
+    BuildInfo buildInfo = new BuildInfo(mockBuild, mockDate, mockListener);
 
     // build.getDuration() is always 0 in Notifiers
-    Assert.assertEquals("Incorrect buildDuration", 60L, buildData.getBuildDuration());
+    Assert.assertEquals("Incorrect buildDuration", 60L, buildInfo.getBuildDuration());
 
     // Verify the rest of the results
-    Assert.assertEquals("Incorrect buildHost", "Jenkins", buildData.getBuildHost());
-    Assert.assertEquals("Incorrect buildLabel", "master", buildData.getBuildLabel());
+    Assert.assertEquals("Incorrect buildHost", "Jenkins", buildInfo.getBuildHost());
+    Assert.assertEquals("Incorrect buildLabel", "master", buildInfo.getBuildLabel());
 
     verifyMocks();
     verifyTestResultActions();
@@ -223,14 +223,14 @@ public class BuildDataTest {
     when(mockNode.getLabelString()).thenReturn("Test Slave");
 
     // Unit under test
-    BuildData buildData = new BuildData(mockBuild, mockDate, mockListener);
+    BuildInfo buildInfo = new BuildInfo(mockBuild, mockDate, mockListener);
 
     // build.getDuration() is always 0 in Notifiers
-    Assert.assertEquals("Incorrect buildDuration", 60L, buildData.getBuildDuration());
+    Assert.assertEquals("Incorrect buildDuration", 60L, buildInfo.getBuildDuration());
 
     // Verify the rest of the results
-    Assert.assertEquals("Incorrect buildHost", "Test Slave 01", buildData.getBuildHost());
-    Assert.assertEquals("Incorrect buildLabel", "Test Slave", buildData.getBuildLabel());
+    Assert.assertEquals("Incorrect buildHost", "Test Slave 01", buildInfo.getBuildHost());
+    Assert.assertEquals("Incorrect buildLabel", "Test Slave", buildInfo.getBuildLabel());
 
     verifyMocks();
     verifyTestResultActions();
@@ -249,9 +249,9 @@ public class BuildDataTest {
     when(mockTestResultAction.getFailedTests()).thenReturn(Arrays.asList(mockTestResult));
 
     // Unit under test
-    BuildData buildData = new BuildData(mockBuild, mockDate, mockListener);
+    BuildInfo buildInfo = new BuildInfo(mockBuild, mockDate, mockListener);
 
-    TestData testResults = buildData.getTestResults();
+    TestData testResults = buildInfo.getTestResults();
 
     Assert.assertEquals("Incorrect test results", 123, testResults.getTotalCount());
     Assert.assertEquals("Incorrect test results", 0, testResults.getSkipCount());
@@ -269,8 +269,8 @@ public class BuildDataTest {
     when(mockBuild.getAction(AbstractTestResultAction.class)).thenReturn(null);
 
     // Unit under test
-    BuildData buildData = new BuildData(mockBuild, mockDate, mockListener);
-    TestData testResults = buildData.getTestResults();
+    BuildInfo buildInfo = new BuildInfo(mockBuild, mockDate, mockListener);
+    TestData testResults = buildInfo.getTestResults();
 
     Assert.assertEquals("Incorrect test results", null, testResults);
 
@@ -306,13 +306,13 @@ public class BuildDataTest {
     when(mockBuild.getSensitiveBuildVariables()).thenReturn(new HashSet<>(Arrays.asList(sensitiveVarKey)));
 
     // Unit under test
-    BuildData buildData = new BuildData(mockBuild, mockDate, mockListener);
+    BuildInfo buildInfo = new BuildInfo(mockBuild, mockDate, mockListener);
 
     // Verify results
-    Assert.assertEquals("Wrong number of environment variables", 2, buildData.getBuildVariables().size());
-    Assert.assertEquals("Missing environment variable '" + envVarKey + "'", envVarVal, buildData.getBuildVariables().get(envVarKey));
-    Assert.assertEquals("Missing environment variable '" + buildVarKey + "'", buildVarVal, buildData.getBuildVariables().get(buildVarKey));
-    Assert.assertNull("Found sensitive environment variable '" + sensitiveVarKey + "'", buildData.getBuildVariables().get(sensitiveVarKey));
+    Assert.assertEquals("Wrong number of environment variables", 2, buildInfo.getBuildVariables().size());
+    Assert.assertEquals("Missing environment variable '" + envVarKey + "'", envVarVal, buildInfo.getBuildVariables().get(envVarKey));
+    Assert.assertEquals("Missing environment variable '" + buildVarKey + "'", buildVarVal, buildInfo.getBuildVariables().get(buildVarKey));
+    Assert.assertNull("Found sensitive environment variable '" + sensitiveVarKey + "'", buildInfo.getBuildVariables().get(sensitiveVarKey));
 
     verify(mockEnvironment).buildEnvVars(Matchers.<Map<String, String>>any());
 
@@ -346,11 +346,11 @@ public class BuildDataTest {
     when(mockBuild.getEnvironment(mockListener)).thenReturn(new EnvVars(varKey, buildVarVal));
 
     // Unit under test
-    BuildData buildData = new BuildData(mockBuild, mockDate, mockListener);
+    BuildInfo buildInfo = new BuildInfo(mockBuild, mockDate, mockListener);
 
     // Verify results
-    Assert.assertEquals("Wrong number of environment variables", 1, buildData.getBuildVariables().size());
-    Assert.assertEquals("Missing environment variable '" + varKey + "'", buildVarVal, buildData.getBuildVariables().get(varKey));
+    Assert.assertEquals("Wrong number of environment variables", 1, buildInfo.getBuildVariables().size());
+    Assert.assertEquals("Missing environment variable '" + varKey + "'", buildVarVal, buildInfo.getBuildVariables().get(varKey));
 
     verify(mockEnvironment).buildEnvVars(Matchers.<Map<String, String>>any());
 
@@ -365,10 +365,10 @@ public class BuildDataTest {
       when(mockBuild.getId()).thenReturn("TEST_JOB_123");
       when(mockBuild.getUrl()).thenReturn("http://localhost:8080/jenkins/jobs/PROJECT_NAME/123");
 
-      BuildData buildData = new BuildData(mockBuild, mockDate, mockListener);
+      BuildInfo buildInfo = new BuildInfo(mockBuild, mockDate, mockListener);
 
       // Unit under test
-      JSONObject result = buildData.toJson();
+      JSONObject result = buildInfo.toJson();
 
       // Verify results
       JSONAssert.assertEquals("Results don't match", JSONObject.fromObject(FULL_STRING), result);
@@ -383,9 +383,9 @@ public class BuildDataTest {
       when(mockBuild.getId()).thenReturn("TEST_JOB_123");
       when(mockBuild.getUrl()).thenReturn("http://localhost:8080/jenkins/jobs/PROJECT_NAME/123");
 
-      BuildData buildData = new BuildData(mockBuild, mockDate, mockListener);
+      BuildInfo buildInfo = new BuildInfo(mockBuild, mockDate, mockListener);
 
-      Assert.assertEquals(buildData.getFullProjectName(), "parent/BuildDataTest");
+      Assert.assertEquals(buildInfo.getFullProjectName(), "parent/BuildInfoTest");
 
       verifyMocks();
       verifyTestResultActions();
@@ -397,9 +397,9 @@ public class BuildDataTest {
       when(mockBuild.getId()).thenReturn("TEST_JOB_123");
       when(mockBuild.getUrl()).thenReturn("http://localhost:8080/jenkins/jobs/PROJECT_NAME/123");
 
-      BuildData buildData = new BuildData(mockBuild, mockDate, mockListener);
+      BuildInfo buildInfo = new BuildInfo(mockBuild, mockDate, mockListener);
 
-      Assert.assertEquals(buildData.getRootFullProjectName(), "parent/RootBuildDataTest");
+      Assert.assertEquals(buildInfo.getRootFullProjectName(), "parent/RootBuildDataTest");
 
       verifyMocks();
       verifyTestResultActions();

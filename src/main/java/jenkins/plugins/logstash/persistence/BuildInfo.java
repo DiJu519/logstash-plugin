@@ -24,26 +24,18 @@
 
 package jenkins.plugins.logstash.persistence;
 
-import hudson.model.Action;
-import hudson.model.Environment;
-import hudson.model.Executor;
-import hudson.model.Result;
-import hudson.model.AbstractBuild;
-import hudson.model.TaskListener;
-import hudson.model.Run;
-import hudson.model.Node;
+import hudson.model.*;
 import hudson.tasks.test.AbstractTestResultAction;
 import hudson.tasks.test.TestResult;
+import hudson.plugins.git.util.BuildData;
+import org.jenkinsci.plugins.pipeline.maven.MavenArtifact;
+import org.jenkinsci.plugins.pipeline.maven.MavenDependency;
+import org.jenkinsci.plugins.pipeline.maven.publishers.MavenReport;
+import org.jenkinsci.plugins.docker.commons.fingerprint.DockerFingerprintAction;
+//import hudson.plugins.git.GitTagAction;
 import jenkins.plugins.logstash.LogstashConfiguration;
 
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Logger;
 
 import static java.util.logging.Level.WARNING;
@@ -62,9 +54,122 @@ import com.google.gson.GsonBuilder;
  * @author Rusty Gerard
  * @since 1.0.0
  */
-public class BuildData {
+public class BuildInfo {
   // ISO 8601 date format
   private final static Logger LOGGER = Logger.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
+
+  public static class GitData{
+    private String scmName, revision;
+    private Set<String> remoteUrls;
+
+    public GitData() {
+      this(null);
+    }
+    public GitData(Action action) {
+      BuildData gitBuildData = null;
+      if (action instanceof BuildData) {
+        gitBuildData = (BuildData) action;
+      }
+
+      if (gitBuildData == null) {
+        scmName = revision = null;
+        remoteUrls = Collections.emptySet();
+        return;
+      }
+
+      scmName = gitBuildData.scmName;
+      remoteUrls = gitBuildData.remoteUrls;
+      revision = gitBuildData.lastBuild.getRevision().toString();
+    }
+
+    public String getScmName() {
+      return scmName;
+    }
+
+    public String getRevision() {
+      return revision;
+    }
+
+    public Set<String> getRemoteUrls() {
+      return remoteUrls;
+    }
+
+  }
+
+  public static class MavenData{
+    private List<MavenArtifact> deployedArtifacts;
+    private List<MavenArtifact> generatedArtifacts;
+    private List<String> downstreamJobs;
+    private List<String> upstreamJobs;
+    private List<MavenDependency> dependencies;
+    private Map<MavenArtifact, Collection<Job>> downstreamJobsByArtifact;
+
+    public MavenData() {
+      this(null);
+    }
+    public MavenData(Action action) {
+      MavenReport mavenBuildData = null;
+      if (action instanceof MavenReport) {
+        mavenBuildData = (MavenReport) action;
+      }
+
+      if (mavenBuildData == null) {
+        deployedArtifacts = Collections.emptyList();
+        generatedArtifacts = Collections.emptyList();
+        downstreamJobs = Collections.emptyList();
+        upstreamJobs = Collections.emptyList();
+        downstreamJobsByArtifact = Collections.emptyMap();
+        dependencies = Collections.emptyList();
+        return;
+      }
+      deployedArtifacts = new ArrayList(mavenBuildData.getDeployedArtifacts());
+      generatedArtifacts = new ArrayList(mavenBuildData.getGeneratedArtifacts());
+      downstreamJobs = new ArrayList(mavenBuildData.getDownstreamJobs());
+      upstreamJobs = new ArrayList(mavenBuildData.getUpstreamBuilds());
+      dependencies = new ArrayList(mavenBuildData.getDependencies());
+      downstreamJobsByArtifact = mavenBuildData.getDownstreamJobsByArtifact();
+
+    }
+
+    public List<MavenArtifact> getMavenDeployedArtifacts() {
+      return deployedArtifacts;
+    }
+    public List<MavenArtifact> getMavenGeneratedArtifacts() {
+      return generatedArtifacts;
+    }
+    public List<String> getDownstreamJobs() {return downstreamJobs;}
+    public List<String> getUpstreamJobs() {return upstreamJobs;}
+    public List<MavenDependency> getDependencies() {return dependencies;}
+    public Map<MavenArtifact, Collection<Job>> getDownstreamJobsByArtifact(){return downstreamJobsByArtifact;}
+
+  }
+
+  public static class DockerData{
+    private Set<String> imageIDs;
+
+    public DockerData() {
+      this(null);
+    }
+    public DockerData(Action action) {
+      DockerFingerprintAction dockerBuildData = null;
+      if (action instanceof DockerFingerprintAction) {
+        dockerBuildData = (DockerFingerprintAction) action;
+      }
+
+      if (dockerBuildData == null) {
+        imageIDs = Collections.emptySet();
+        return;
+      }
+
+      imageIDs = dockerBuildData.getImageIDs();
+    }
+
+    public Set<String> getDockerArtifacts() {
+      return imageIDs;
+    }
+
+  }
+
   public static class TestData {
     private int totalCount, skipCount, failCount, passCount;
     private List<FailedTest> failedTestsWithErrorDetail;
@@ -171,9 +276,12 @@ public class BuildData {
   private Map<String, String> buildVariables;
   private Set<String> sensitiveBuildVariables;
   private TestData testResults = null;
+  private GitData gitInfo = null;
+  private MavenData mavenInfo = null;
+  private DockerData dockerInfo = null;
 
   // Freestyle project build
-  public BuildData(AbstractBuild<?, ?> build, Date currentTime, TaskListener listener) {
+  public BuildInfo(AbstractBuild<?, ?> build, Date currentTime, TaskListener listener) {
     initData(build, currentTime);
 
     // build.getDuration() is always 0 in Notifiers
@@ -212,7 +320,7 @@ public class BuildData {
   }
 
   // Pipeline project build
-  public BuildData(Run<?, ?> build, Date currentTime, TaskListener listener) {
+  public BuildInfo(Run<?, ?> build, Date currentTime, TaskListener listener) {
     initData(build, currentTime);
 
     rootProjectName = projectName;
@@ -270,6 +378,20 @@ public class BuildData {
     Action testResultAction = build.getAction(AbstractTestResultAction.class);
     if (testResults == null && testResultAction != null) {
       testResults = new TestData(testResultAction);
+    }
+    Action GitBuildData = build.getAction(BuildData.class);
+    if (gitInfo == null && GitBuildData != null) {
+      gitInfo = new GitData(GitBuildData);
+    }
+
+    Action MavenBuildData = build.getAction(MavenReport.class);
+    if (mavenInfo == null && MavenBuildData != null) {
+      mavenInfo = new MavenData(MavenBuildData);
+    }
+
+    Action DockerBuildData = build.getAction(DockerFingerprintAction.class);
+    if (dockerInfo == null && DockerBuildData != null) {
+      dockerInfo = new DockerData(DockerBuildData);
     }
   }
 

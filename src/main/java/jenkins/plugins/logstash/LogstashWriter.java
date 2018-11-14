@@ -29,7 +29,7 @@ import hudson.model.AbstractBuild;
 import hudson.model.TaskListener;
 import hudson.model.Run;
 import jenkins.model.Jenkins;
-import jenkins.plugins.logstash.persistence.BuildData;
+import jenkins.plugins.logstash.persistence.BuildInfo;
 import jenkins.plugins.logstash.persistence.LogstashIndexerDao;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
@@ -56,7 +56,7 @@ public class LogstashWriter {
   private final OutputStream errorStream;
   private final Run<?, ?> build;
   private final TaskListener listener;
-  private final BuildData buildData;
+  private final BuildInfo buildInfo;
   private final String jenkinsUrl;
   private final LogstashIndexerDao dao;
   private boolean connectionBroken;
@@ -70,10 +70,10 @@ public class LogstashWriter {
     this.dao = this.getDaoOrNull();
     if (this.dao == null) {
       this.jenkinsUrl = "";
-      this.buildData = null;
+      this.buildInfo = null;
     } else {
       this.jenkinsUrl = getJenkinsUrl();
-      this.buildData = getBuildData();
+      this.buildInfo = getBuildInfo();
     }
   }
 
@@ -141,7 +141,7 @@ public class LogstashWriter {
    * @return True if errors have occurred during initialization or write.
    */
   public boolean isConnectionBroken() {
-    return connectionBroken || build == null || dao == null || buildData == null;
+    return connectionBroken || build == null || dao == null || buildInfo == null;
   }
 
   // Method to encapsulate calls for unit-testing
@@ -149,11 +149,11 @@ public class LogstashWriter {
     return LogstashConfiguration.getInstance().getIndexerInstance();
   }
 
-  BuildData getBuildData() {
+  BuildInfo getBuildInfo() {
     if (build instanceof AbstractBuild) {
-      return new BuildData((AbstractBuild<?, ?>) build, new Date(), listener);
+      return new BuildInfo((AbstractBuild<?, ?>) build, new Date(), listener);
     } else {
-      return new BuildData(build, new Date(), listener);
+      return new BuildInfo(build, new Date(), listener);
     }
   }
 
@@ -165,8 +165,8 @@ public class LogstashWriter {
    * Write a list of lines to the indexer as one Logstash payload.
    */
   private void write(List<String> lines) {
-    buildData.updateResult();
-    JSONObject payload = dao.buildPayload(buildData, jenkinsUrl, lines);
+    buildInfo.updateResult();
+    JSONObject payload = dao.buildPayload(buildInfo, jenkinsUrl, lines);
     try {
       dao.push(payload.toString());
     } catch (IOException e) {

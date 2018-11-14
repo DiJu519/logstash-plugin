@@ -39,13 +39,13 @@ import net.sf.json.JSONObject;
 public abstract class AbstractLogstashIndexerDao implements LogstashIndexerDao {
 
   @Override
-  public JSONObject buildPayload(BuildData buildData, String jenkinsUrl, List<String> logLines) {
+  public JSONObject buildPayload(BuildInfo buildInfo, String jenkinsUrl, List<String> logLines) {
     JSONObject payload = new JSONObject();
-    payload.put("data", buildData.toJson());
+    payload.put("data", buildInfo.toJson());
     payload.put("message", logLines);
     payload.put("source", "jenkins");
     payload.put("source_host", jenkinsUrl);
-    payload.put("@buildTimestamp", buildData.getTimestamp());
+    payload.put("@buildTimestamp", buildInfo.getTimestamp());
     payload.put("@timestamp", LogstashConfiguration.getInstance().getDateFormatter().format(Calendar.getInstance().getTime()));
     payload.put("@version", 1);
 

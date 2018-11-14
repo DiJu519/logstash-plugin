@@ -28,7 +28,8 @@ public class AbstractLogstashIndexerDaoTest {
   static final String ONE_LINE_STRING = "{\"@buildTimestamp\":\"2000-01-01\",\"data\":{},\"message\":[\"LINE 1\"],\"source\":\"jenkins\",\"source_host\":\"http://localhost:8080/jenkins\",\"@version\":1}";
   static final String TWO_LINE_STRING = "{\"@buildTimestamp\":\"2000-01-01\",\"data\":{},\"message\":[\"LINE 1\", \"LINE 2\"],\"source\":\"jenkins\",\"source_host\":\"http://localhost:8080/jenkins\",\"@version\":1}";
 
-  @Mock BuildData mockBuildData;
+  @Mock
+  BuildInfo mockBuildInfo;
   @Mock LogstashConfiguration logstashConfiguration;
 
   @Before
@@ -37,8 +38,8 @@ public class AbstractLogstashIndexerDaoTest {
     when(LogstashConfiguration.getInstance()).thenReturn(logstashConfiguration);
     when(logstashConfiguration.getDateFormatter()).thenCallRealMethod();
 
-    when(mockBuildData.toJson()).thenReturn(JSONObject.fromObject("{}"));
-    when(mockBuildData.getTimestamp()).thenReturn("2000-01-01");
+    when(mockBuildInfo.toJson()).thenReturn(JSONObject.fromObject("{}"));
+    when(mockBuildInfo.getTimestamp()).thenReturn("2000-01-01");
   }
 
   @Test
@@ -46,7 +47,7 @@ public class AbstractLogstashIndexerDaoTest {
     AbstractLogstashIndexerDao dao = getInstance();
 
     // Unit under test
-    JSONObject result = dao.buildPayload(mockBuildData, "http://localhost:8080/jenkins", new ArrayList<String>());
+    JSONObject result = dao.buildPayload(mockBuildInfo, "http://localhost:8080/jenkins", new ArrayList<String>());
     result.remove("@timestamp");
 
     // Verify results
@@ -58,7 +59,7 @@ public class AbstractLogstashIndexerDaoTest {
     AbstractLogstashIndexerDao dao = getInstance();
 
     // Unit under test
-    JSONObject result = dao.buildPayload(mockBuildData, "http://localhost:8080/jenkins", Arrays.asList("LINE 1"));
+    JSONObject result = dao.buildPayload(mockBuildInfo, "http://localhost:8080/jenkins", Arrays.asList("LINE 1"));
     result.remove("@timestamp");
 
     // Verify results
@@ -70,7 +71,7 @@ public class AbstractLogstashIndexerDaoTest {
     AbstractLogstashIndexerDao dao = getInstance();
 
     // Unit under test
-    JSONObject result = dao.buildPayload(mockBuildData, "http://localhost:8080/jenkins", Arrays.asList("LINE 1", "LINE 2"));
+    JSONObject result = dao.buildPayload(mockBuildInfo, "http://localhost:8080/jenkins", Arrays.asList("LINE 1", "LINE 2"));
     result.remove("@timestamp");
 
     // Verify results

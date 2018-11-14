@@ -13,7 +13,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
-import jenkins.plugins.logstash.persistence.BuildData;
+import jenkins.plugins.logstash.persistence.BuildInfo;
 
 import org.junit.After;
 import org.junit.Before;
@@ -59,7 +59,8 @@ public class LogstashConsoloLogFilterTest {
 
   @Mock AbstractBuild mockBuild;
   @Mock Project<?, ?> mockProject;
-  @Mock BuildData mockBuildData;
+  @Mock
+  BuildInfo mockBuildInfo;
   @Mock LogstashWriter mockWriter;
 
   @Before
@@ -79,7 +80,7 @@ public class LogstashConsoloLogFilterTest {
   @After
   public void after() throws Exception {
     verifyNoMoreInteractions(mockWriter);
-    verifyNoMoreInteractions(mockBuildData);
+    verifyNoMoreInteractions(mockBuildInfo);
     buffer.close();
   }
 
